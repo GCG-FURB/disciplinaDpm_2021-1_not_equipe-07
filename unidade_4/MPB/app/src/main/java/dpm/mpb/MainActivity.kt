@@ -1,6 +1,7 @@
 package dpm.mpb
 
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -11,6 +12,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import kotlin.math.truncate
 
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
@@ -27,6 +29,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        requestedOrientation = (ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+
         // Scale
         val metrics = DisplayMetrics()
         windowManager.defaultDisplay.getMetrics(metrics)
@@ -42,8 +46,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         // Circle
         circle = findViewById(R.id.imageViewCircle);
 
-        circle.x = 50F
-        circle.y = 50F
+        circle.x = 445F
+        circle.y = 150F
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
@@ -54,15 +58,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         sensorManager.registerListener(
                 this,
                 sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION),
-                SensorManager.SENSOR_DELAY_FASTEST)
+                SensorManager.SENSOR_DELAY_GAME)
 
         // Orientation
         valuesOrientation = findViewById(R.id.textViewValuesOrientation)
-        valuesOrientation.isVisible = true
+        valuesOrientation.isVisible = false
         sensorManager.registerListener(
                 this,
                 sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),
-                SensorManager.SENSOR_DELAY_FASTEST)
+                SensorManager.SENSOR_DELAY_GAME)
     }
 
     override fun onResume() {
@@ -88,14 +92,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun linearAccelerometer(event: SensorEvent?){
 
-        if(Math.abs(event!!.values[0]) > 0.01F) {
+        if(Math.abs(event!!.values[0]) > 0.2F) {
+            circle.x = (0.5 * Math.cos(Math.PI * increaseAngle(azimuth, 180.0) / 180.0) + circle.x).toFloat()
             //circle.x = (((event!!.values[0]*100)/scaleX) * Math.cos(Math.PI * azimuth / 180) + circle.x).toFloat() // Eixo X
-            circle.x = (-Math.abs(event!!.values[0]) * Math.cos(Math.PI * azimuth / 180) + circle.x).toFloat() // Eixo X
+            //circle.x = (-Math.abs(event!!.values[0]) * Math.cos(Math.PI * azimuth / 180) + circle.x).toFloat() // Eixo X
         }
 
-        if(Math.abs(event!!.values[1]) > 0.01F) {
+        if(Math.abs(event!!.values[1]) > 0.2F) {
+            circle.y = (0.5 * Math.sin(Math.PI * increaseAngle(azimuth, 180.0) / 180.0) + circle.y).toFloat();
             //circle.y = (((event!!.values[1]*100)/scaleY) * Math.sin(Math.PI * azimuth / 180) + circle.y).toFloat() // Eixo Y
-            circle.y = (-Math.abs(event!!.values[1]) * Math.sin(Math.PI * azimuth / 180) + circle.y).toFloat() // Eixo Y
+            //circle.y = (-Math.abs(event!!.values[1]) * Math.sin(Math.PI * azimuth / 180) + circle.y).toFloat() // Eixo Y
         }
 
         if(valuesLinearAccelerometer.isVisible)
@@ -105,14 +111,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             "z = ${String.format("%.4f", event!!.values[2])}"
     }
 
+    private fun increaseAngle(currentAngle: Double, valueToAdd: Double): Double{
+        var result = currentAngle + valueToAdd
+        while(result < 0 || result > 360){
+            if(result > 360)
+                result -= 360
+            else
+                if(result < 0)
+                    result = 360 - Math.abs(result)
+        }
+        return result
+    }
+
     private fun orientation(event: SensorEvent?){
-        azimuth = event!!.values[0].toDouble()
+        //azimuth = increaseAngle(event!!.values[0].toDouble(), -111.8)
+        azimuth = increaseAngle(truncate(event!!.values[0].toDouble()),68.0)
 
         if(valuesOrientation.isVisible)
             valuesOrientation.text =
-                    "Azimuth = ${String.format("%.4f", event!!.values[0])}\n\n"+
-                    "Pitch = ${String.format("%.4f", event!!.values[1])}\n\n"+
-                    "Roll = ${String.format("%.4f", event!!.values[2])}\n\n"+
+                    "Azimuth = ${azimuth}\n\n"+
                     "ScaleX = ${String.format("%.4f", scaleX)}\n\n"+
                     "ScaleY = ${String.format("%.4f", scaleY)}"
     }
