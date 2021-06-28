@@ -11,18 +11,19 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="fitXY"
-        app:srcCompat="@drawable/plantabaixa"
+        app:srcCompat="@drawable/plantabaixa2"
         tools:layout_editor_absoluteX="47dp"
         tools:layout_editor_absoluteY="124dp"
-        tools:srcCompat="@drawable/plantabaixa" />
+        tools:srcCompat="@drawable/plantabaixa2" />
 
     <ImageView
         android:id="@+id/imageViewCircle"
         android:layout_width="17dp"
         android:layout_height="29dp"
-        app:srcCompat="@drawable/circuloseta"
+        app:srcCompat="@drawable/circulo2"
         tools:layout_editor_absoluteX="154dp"
-        tools:layout_editor_absoluteY="221dp" />
+        tools:layout_editor_absoluteY="221dp"
+        tools:srcCompat="@drawable/circulo2" />
 
     <TextView
         android:id="@+id/textViewValuesLinearAccelerometer"
@@ -43,4 +44,20 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imageViewCircle" />
+
+    <Button
+        android:id="@+id/btGps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GPS"
+        tools:layout_editor_absoluteX="287dp"
+        tools:layout_editor_absoluteY="40dp" />
+
+    <ImageView
+        android:id="@+id/imageViewLuz"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:srcCompat="@drawable/ic_launcher_foreground"
+        tools:layout_editor_absoluteX="256dp"
+        tools:layout_editor_absoluteY="578dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>

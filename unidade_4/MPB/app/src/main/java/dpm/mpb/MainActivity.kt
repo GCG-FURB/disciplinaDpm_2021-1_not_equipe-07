@@ -1,6 +1,7 @@
 package dpm.mpb
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -8,6 +9,8 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.DisplayMetrics
+import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -19,17 +22,27 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     lateinit var sensorManager: SensorManager
     lateinit var circle: ImageView;
+    lateinit var luz : ImageView;
+    lateinit var btGps : Button
     lateinit var valuesLinearAccelerometer: TextView
     lateinit var valuesOrientation: TextView
     var azimuth: Double = 0.0
     var scaleX: Double = 1.0
     var scaleY: Double = 1.0
+    var brightness: Sensor? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         requestedOrientation = (ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+        btGps = findViewById(R.id.btGps)
+
+        btGps.setOnClickListener {
+
+            val telaGps = Intent(this, MapsActivity::class.java)
+            startActivity(telaGps)
+        }
 
         // Scale
         val metrics = DisplayMetrics()
@@ -45,6 +58,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         // Circle
         circle = findViewById(R.id.imageViewCircle);
+        luz = findViewById(R.id.imageViewLuz);
+
+        luz.x = metrics.widthPixels.toFloat() - 150
+        luz.y = DisplayMetrics().ydpi + 50
+        //btGps.y = 700f
+
+
+        luz.layoutParams.width = 100;
+        luz.layoutParams.height = 100;
 
         circle.x = 445F
         circle.y = 150F
@@ -54,6 +76,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         // Accelerometer
         valuesLinearAccelerometer = findViewById(R.id.textViewValuesLinearAccelerometer)
         valuesLinearAccelerometer.isVisible = false
+
+        sensorManager.registerListener(
+            this,
+            sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT),
+            SensorManager.SENSOR_DELAY_GAME)
+
 
         sensorManager.registerListener(
                 this,
@@ -69,14 +97,31 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 SensorManager.SENSOR_DELAY_GAME)
     }
 
+    private fun setUpSensorStuff(){
+        brightness = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+    }
+
+    private fun brightness(brightness: Float): String{
+        return when (brightness.toInt()){
+            0 -> "0" // Ausência de Luz
+            in 1..10 ->"1" // Escuro
+            in 11..50 -> "2" //Luz Media
+            in 51..5000 -> "3" // Normal
+            in 5001..25000 -> "4"// Luz muito forte
+            else -> "5" // Excesso de Luz
+        }
+    }
+
     override fun onResume() {
         super.onResume()
+        sensorManager.registerListener(this, brightness, SensorManager.SENSOR_DELAY_NORMAL)
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SensorManager.SENSOR_STATUS_ACCURACY_LOW)
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION), SensorManager.SENSOR_STATUS_ACCURACY_LOW)
     }
 
     override fun onPause() {
         super.onPause()
+        sensorManager.unregisterListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT))
         sensorManager.unregisterListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION))
         sensorManager.unregisterListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION))
     }
@@ -84,6 +129,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) { }
 
     override fun onSensorChanged(event: SensorEvent?) {
+
+        if (event!!.sensor.type == Sensor.TYPE_LIGHT){
+            val light = event.values[0]
+            if (brightness(light) == "0" || brightness(light) == "1"){
+                luz.setImageDrawable(resources.getDrawable(R.drawable.light1))
+            }else{
+                luz.setImageDrawable(resources.getDrawable(R.drawable.light2))
+            }
+        }
+
         when(event!!.sensor.type) {
             Sensor.TYPE_LINEAR_ACCELERATION -> linearAccelerometer(event)
             Sensor.TYPE_ORIENTATION -> orientation(event)
@@ -106,9 +161,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         if(valuesLinearAccelerometer.isVisible)
             valuesLinearAccelerometer.text =
-                    "x = ${String.format("%.4f", event!!.values[0])}\n\n"+
-                            "y = ${String.format("%.4f", event!!.values[1])}\n\n"+
-                            "z = ${String.format("%.4f", event!!.values[2])}"
+                "x = ${String.format("%.4f", event!!.values[0])}\n\n"+
+                        "y = ${String.format("%.4f", event!!.values[1])}\n\n"+
+                        "z = ${String.format("%.4f", event!!.values[2])}"
     }
 
     private fun increaseAngle(currentAngle: Double, valueToAdd: Double): Double{
@@ -124,8 +179,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun orientation(event: SensorEvent?){
-        //azimuth = increaseAngle(event!!.values[0].toDouble(), -111.8)
-        azimuth = increaseAngle(truncate(event!!.values[0].toDouble()),68.0)
+        azimuth = increaseAngle(truncate(event!!.values[0].toDouble()), 74.0)
+        circle.rotation = increaseAngle(azimuth, -90.0).toFloat() // -90 por que a tela do celular é na horizontal (paisagem)
 
         if(valuesOrientation.isVisible)
             valuesOrientation.text =
